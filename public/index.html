@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>松树桥中学卷帘门控制系统</title>
+    <style>
+        :root {
+            --primary-color: #1e3a8a; /* 深蓝 */
+            --secondary-color: #3b82f6; /* 浅蓝 */
+            --success-color: #10b981; /* 绿色 */
+            --error-color: #ef4444; /* 红色 */
+            --warning-color: #f59e0b; /* 橙色 */
+            --bg-color: #f8fafc; /* 浅灰白 */
+            --text-color: #1e293b; /* 深灰 */
+            --border-color: #e2e8f0; /* 浅边框 */
+            --shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* 加深阴影 */
+            --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.15);
+            --radius: 12px; /* 更大圆角 */
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(135deg, var(--bg-color) 0%, #e0e7ff 50%, #c7d2fe 100%);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative; /* 为 Toast 准备 */
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        .header h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 2.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        .header p {
+            color: #64748b;
+            margin: 5px 0 0;
+            font-size: 1.1em;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+        }
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--secondary-color);
+            transition: 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+        .card:hover::before {
+            width: 6px;
+        }
+        h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4em;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        .btn {
+            background: linear-gradient(135deg, var(--secondary-color), #2563eb);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+            margin: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 12px;
+            background: var(--bg-color);
+            border-radius: var(--radius);
+            transition: background 0.2s;
+        }
+        .status-item span:first-child {
+            font-weight: bold;
+        }
+        .status-value {
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        /* 状态颜色 */
+        .status-open { background: var(--success-color); color: white; }
+        .status-closed { background: var(--error-color); color: white; }
+        .status-moving { background: var(--warning-color); color: white; }
+        .status-default { background: var(--border-color); color: var(--text-color); }
+        select, input[type="text"], input[type="time"] {
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 16px;
+            margin: 8px 0;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        select:focus, input:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+        }
+        .days-checkbox {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin: 15px 0;
+        }
+        .days-checkbox label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            padding: 6px;
+            background: var(--bg-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .days-checkbox label:hover {
+            background: #e0e7ff;
+        }
+        .schedule-list {
+            list-style: none;
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto; /* 滚动 */
+        }
+        .schedule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: var(--bg-color);
+            border-radius: var(--radius);
+            margin: 10px 0;
+            transition: all 0.2s;
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .schedule-item:hover {
+            background: #e0e7ff;
+        }
+        .schedule-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .delete-btn {
+            background: var(--error-color);
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .log-list {
+            max-height: 400px;
+            overflow-y: auto; /* 滚动日志 */
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 10px;
+            background: var(--bg-color);
+        }
+        .log-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            animation: fadeIn 0.3s ease-in;
+            margin-bottom: 5px;
+        }
+        .log-time {
+            color: #64748b;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        /* Toast 通知样式 */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .toast {
+            min-width: 300px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            border-radius: var(--radius);
+            color: white;
+            font-size: 14px;
+            box-shadow: var(--shadow);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .toast.success { background: var(--success-color); }
+        .toast.error { background: var(--error-color); }
+        .toast.warning { background: var(--warning-color); }
+        .toast .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+            .btn-group { flex-direction: column; }
+            .toast { min-width: 250px; right: 10px; left: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛡️ 松树桥中学卷帘门控制系统</h1>
+        <p>远程控制 & 定时管理 | 实时状态监控</p>
+    </div>
+    <div class="container">
+        <div class="card">
+            <h2>🎮 手动控制</h2>
+            <div class="btn-group">
+                <button class="btn" onclick="sendCommand('up')">🚀 上升 ↑</button>
+                <button class="btn" onclick="sendCommand('down')">⬇️ 下降 ↓</button>
+                <button class="btn" onclick="sendCommand('stop')">⏸️ 停止/解锁 🔓</button>
+                <button class="btn" onclick="sendCommand('lock')">🔒 锁定</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📊 设备状态</h2>
+            <div class="status-item">
+                <span>当前状态:</span>
+                <span id="current-status" class="status-value status-default">--</span>
+            </div>
+            <div class="status-item">
+                <span>最后更新:</span>
+                <span id="last-update">--</span>
+            </div>
+            <div class="status-item">
+                <span>设备IP:</span>
+                <span id="device-ip">--</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>⏰ 定时任务设置</h2>
+            <form id="schedule-form">
+                <input type="text" id="schedule-name" placeholder="任务名称 (e.g., 早上开)" required>
+                <input type="time" id="schedule-time" required>
+                <select id="schedule-command" required>
+                    <option value="">选择命令</option>
+                    <option value="up">上升</option>
+                    <option value="down">下降</option>
+                    <option value="stop">停止/解锁</option>
+                    <option value="lock">锁定</option>
+                </select>
+                <div class="days-checkbox">
+                    <label><input type="checkbox" value="0">日</label>
+                    <label><input type="checkbox" value="1">一</label>
+                    <label><input type="checkbox" value="2">二</label>
+                    <label><input type="checkbox" value="3">三</label>
+                    <label><input type="checkbox" value="4">四</label>
+                    <label><input type="checkbox" value="5">五</label>
+                    <label><input type="checkbox" value="6">六</label>
+                </div>
+                <button type="submit" class="btn">➕ 添加定时</button>
+            </form>
+            <ul id="schedule-list" class="schedule-list"></ul>
+        </div>
+
+        <div class="card">
+            <h2>📝 系统日志</h2>
+            <div id="log-list" class="log-list"></div>
+        </div>
+        <div class="card">
+        <footer>Copyright 松树桥中学高2026.4胡泽全</footer>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // 东八区时间格式化函数
+        function formatTime(date) {
+            return new Intl.DateTimeFormat('zh-CN', {
+                timeZone: 'Asia/Shanghai',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }).format(date);
+        }
+
+        // 更新状态颜色
+        function updateStatusColor(status) {
+            const el = document.getElementById('current-status');
+            el.className = 'status-value status-default';
+            if (status.includes('open')) el.className += ' status-open';
+            else if (status.includes('closed')) el.className += ' status-closed';
+            else if (status.includes('moving')) el.className += ' status-moving';
+        }
+
+        // Toast 通知函数
+        function showToast(message, type = 'success', duration = 3000, isConfirm = false) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const closeBtn = isConfirm ? `<button class="close-btn" onclick="this.parentElement.remove()">×</button>` : '';
+            toast.innerHTML = `
+                <span>${message}</span>
+                ${closeBtn}
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 100);
+            if (!isConfirm) {
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            }
+        }
+
+        // 确认函数（使用 Toast）
+        function confirmAction(message, onConfirm) {
+            showToast(message, 'warning', 5000, true);
+            // 点击关闭即确认（或超时自动确认）
+            const toast = document.querySelector('.toast:last-child');
+            toast.addEventListener('click', (e) => {
+                if (e.target.tagName !== 'BUTTON') {
+                    onConfirm();
+                    toast.remove();
+                }
+            });
+            setTimeout(() => {
+                onConfirm();
+                toast.remove();
+            }, 5000);
+        }
+
+        // 发送命令
+        async function sendCommand(cmd) {
+            try {
+                const res = await fetch('/api/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: cmd })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`命令发送成功: ${cmd}`, 'success');
+                    updateStatus();
+                } else {
+                    showToast(`错误: ${data.error}`, 'error');
+                }
+            } catch (err) {
+                showToast('发送失败: ' + err.message, 'error');
+            }
+        }
+
+        // 更新设备状态
+        async function updateStatus() {
+            try {
+                const res = await fetch('/api/device-status');
+                const data = await res.json();
+                document.getElementById('current-status').textContent = data.status;
+                updateStatusColor(data.status);
+                document.getElementById('last-update').textContent = formatTime(new Date(data.lastUpdate));
+                document.getElementById('device-ip').textContent = data.ip || '--';
+            } catch (err) {
+                console.error('状态更新失败:', err);
+            }
+        }
+
+        // 加载并显示定时任务（移除切换，只剩删除）
+        async function loadSchedules() {
+            try {
+                const res = await fetch('/api/schedules');
+                const schedules = await res.json();
+                const list = document.getElementById('schedule-list');
+                list.innerHTML = '';
+                schedules.forEach(s => {
+                    const li = document.createElement('li');
+                    li.className = 'schedule-item';
+                    const enabledText = s.enabled ? '启用' : '禁用';
+                    li.innerHTML = `
+                        <span>${s.name} - ${s.time} - ${s.command} (${s.days}) - <strong>${enabledText}</strong></span>
+                        <div class="schedule-actions">
+                            <button class="btn delete-btn" onclick="deleteSchedule(${s.id})">删除</button>
+                        </div>
+                    `;
+                    list.appendChild(li);
+                });
+            } catch (err) {
+                console.error('加载定时任务失败:', err);
+            }
+        }
+
+        // 删除定时任务（使用确认 Toast）
+        async function deleteSchedule(id) {
+            confirmAction('确认删除此任务？', async () => {
+                try {
+                    const res = await fetch(`/api/schedules/${id}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (data.deleted > 0) {
+                        showToast('删除成功', 'success');
+                        loadSchedules();
+                    } else {
+                        showToast('删除失败', 'error');
+                    }
+                } catch (err) {
+                    showToast('删除失败: ' + err.message, 'error');
+                }
+            });
+        }
+
+        async function loadLogs() {
+            try {
+                const res = await fetch('/api/logs');
+                const logs = await res.json();
+                const list = document.getElementById('log-list');
+                list.innerHTML = '';
+                logs.forEach(log => {
+                    let logTimeStr = log.timestamp.replace(' ', 'T') + 'Z';
+                    const logDate = new Date(logTimeStr);
+                    const div = document.createElement('div');
+                    div.className = 'log-item';
+                    div.innerHTML = `
+                        <div class="log-time">${formatTime(logDate)}</div>
+                        <div>[${log.status || '正常'}] ${log.message}</div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                console.error('加载日志失败:', err);
+            }
+        }
+
+        // 定时任务
+        document.getElementById('schedule-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('schedule-name').value;
+            const time = document.getElementById('schedule-time').value;
+            const command = document.getElementById('schedule-command').value;
+            const days = Array.from(document.querySelectorAll('.days-checkbox input:checked')).map(cb => cb.value).join(',');
+            if (!days) {
+                showToast('请选择至少一天', 'error');
+                return;
+            }
+            try {
+                const res = await fetch('/api/schedules', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, time, command, days })
+                });
+                const data = await res.json();
+                if (data.id) {
+                    showToast('添加成功', 'success');
+                    document.getElementById('schedule-form').reset();
+                    loadSchedules();
+                } else {
+                    showToast('添加失败', 'error');
+                }
+            } catch (err) {
+                showToast('添加失败: ' + err.message, 'error');
+            }
+        });
+
+        // 初始加载和定时刷新（每 5 秒刷新状态，每 30 秒刷新日志/任务）
+        updateStatus();
+        loadSchedules();
+        loadLogs();
+        setInterval(updateStatus, 5000);
+        setInterval(() => { loadLogs(); loadSchedules(); }, 30000);
+    </script>
+</body>
+</html>
